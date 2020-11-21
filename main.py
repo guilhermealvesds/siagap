@@ -1,7 +1,7 @@
 # coding: latin1
 # Simple enough, just import everything from tkinter.
 from tkinter import *
-
+import os
 
 # Here, we are creating our class, Window, and inheriting from the Frame
 # class. Frame is a class from the tkinter module. (see Lib/tkinter/__init__)
@@ -37,14 +37,18 @@ class Window(Frame):
 
         # adds a command to the menu option, calling it exit, and the
         # command it runs on event is client_exit
-        file.add_command(label="Configurações", command=self.client_exit)
-        file.add_command(label="Exit", command=self.client_exit)
+        file.add_command(label="Tela Inicial", command=self.tela_inicial)
+        file.add_command(label="Sair", command=self.client_exit)
 
         #added "file" to our menu
         menu.add_cascade(label="Sistema", menu=file)
 
     def client_exit(self):
         exit()
+        
+    def tela_inicial(self):
+		dirAnterior = 'C:\\Python27\\'
+		os.system(dirAnterior + "python " + os.getcwd() + "\\" + "splash.py")
 
         
 # root window created. Here, that would be the only window, but
