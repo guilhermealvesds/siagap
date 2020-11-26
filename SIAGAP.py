@@ -15,61 +15,73 @@ from Tkinter import Label, Button, LEFT, TOP, X, FLAT, RAISED, SUNKEN
 import os
 import tkFileDialog
 
+# declaração variáveis
+
+v_configura_tela_inicial = 0
+v_cores = 0
+
+resolucao_tela = '640x320'
+resolucao_width = 640
+resolucao_height = 320
+
 # define e implementa as funções
-def client_exit(self):
+def client_exit():
 	exit()
 
-def configura_tela_inicial(self):
-	t = tk.Toplevel(self)
-	t.geometry("500x500")
-	def carregaPlanoDeFundo():
-		nomeArquivo = tkFileDialog.askopenfilename(parent = t, initialdir = "/",title = "Select file",filetypes = (("png files","*.png"),("all files","*.*")))
-		lbDirplanodefundo.config(text = nomeArquivo)
-	def carregaLogo():
-		nomeLogo = tkFileDialog.askopenfilename(parent = t, initialdir = "/",title = "Select file",filetypes = (("png files","*.png"),("all files","*.*")))
-		lbDirLogo.config(text = nomeLogo)
-	def salvarImagens():
-		if lbDirplanodefundo.cget("text") <> '' and lbDirLogo.cget("text") <> '':
-			background = Image.open(lbDirplanodefundo.cget("text"), 'r')
-			foreground = Image.open(lbDirLogo.cget("text"), 'r')
-			os.remove(os.getcwd() + '\\' + 'background.png')
-			os.remove(os.getcwd() + '\\' + 'foreground.png')
-			background.save(os.getcwd() + '\\' + 'background.png', format="png")
-			foreground.save(os.getcwd() + '\\' + 'foreground.png', format="png")
-			foreground = os.getcwd() + '\\' + 'foreground.png'
-			foreground = Image.open(foreground, 'r')
-			background = os.getcwd() + '\\' + 'background.png'
-			background = Image.open(background, 'r')
-			x, y = background.size
-			z, a = foreground.size
-			text_img = Image.new('RGBA', (x,y), (0, 0, 0, 0))
-			text_img.paste(background, (0,0))
-			try:
-				text_img.paste(foreground, ((x/2)-(z/2),(y/2)-(a/2)), mask=foreground)
-			except:
-				text_img.paste(foreground, ((x/2)-(z/2),(y/2)-(a/2)))
-			text_img.save("splash.png", format="png")
-		self.counter += 1
-		t.wm_title("Window #%s" % self.counter)
-		t.resizable(width=tk.FALSE, height=tk.FALSE)
-		frame1 = tk.Frame(t)
-		lbplanodefundo = tk.Label(frame1, text="Plano de fundo", fg="black", font="Verdana").grid(row=0)
-		botaoCarregaPlanoDeFundo = tk.Button(frame1, text='Upload', font=('Verdana','10'), fg='Black', command=carregaPlanoDeFundo)
-		botaoCarregaPlanoDeFundo.grid(row=0, column = 1)
-		lbDirplanodefundo = tk.Label(frame1, text='', fg="black", font="Verdana")
-		lbDirplanodefundo.grid(row=0, column=2)
-		lblogo = tk.Label(frame1, text="Logomarca", fg="black", font="Verdana").grid(row=1)
-		botaoCarregaLogo = tk.Button(frame1, text='Upload', font=('Verdana','10'), fg='Black', command=carregaLogo).grid(row=1, column=1)
-		lbDirLogo = tk.Label(frame1, text='', fg="black", font="Verdana")
-		lbDirLogo.grid(row=1, column=2)
-		botaoSalvar = tk.Button(t, text='SALVAR', font=('Verdana','12'), fg='Black', command=salvarImagens).pack(side=tk.BOTTOM, pady=12)
-		frame1.pack(side=tk.LEFT, expand=tk.NO)
-		windowWidth = 500
-		windowHeight = 500
+def combine_funcs(*funcs):
+	def combined_func(*args, **kwargs):
+		for f in funcs:
+			f(*args, **kwargs)
+	return combined_func	
+
+def cores():
+	global v_cores
+	def on_close():
+		global v_cores
+		v_cores = 0			
+	if v_cores == 0:
+		t = tk.Toplevel()
+		t.geometry(resolucao_tela)
+		t.title('Cores - Parametrização')
+		Button(t, text='Cores - CDP', command=combine_funcs(on_close, t.destroy), width = 60).pack(padx=7, pady=7)
+		Button(t, text='Cores - Avaliação Fenotípica', command=combine_funcs(on_close, t.destroy), width = 60).pack(padx=7, pady=7)
+		Button(t, text='Cores - Produtividade', command=combine_funcs(on_close, t.destroy), width = 60).pack(padx=7, pady=7)
+		Button(t, text='Cores - Avaliação Genética', command=combine_funcs(on_close, t.destroy), width = 60).pack(padx=7, pady=7)
+		Button(t, text='Cores - Avaliação Visual - Bezerro', command=combine_funcs(on_close, t.destroy), width = 60).pack(padx=7, pady=7)
+		Button(t, text='Cores - Acasalamentos', command=combine_funcs(on_close, t.destroy), width = 60).pack(padx=7, pady=7)
+		Button(t, text='Cores - Cabeçalhos - Relatórios', command=combine_funcs(on_close, t.destroy), width = 60).pack(padx=7, pady=7)
+		Button(t, text='FECHAR', command=combine_funcs(on_close, t.destroy)).pack(padx=7, pady=7)
+		t.protocol("WM_DELETE_WINDOW", combine_funcs(on_close, t.destroy))
+		t.iconbitmap(default='transparent.ico')
+		windowWidth, windowHeight = resolucao_width, resolucao_height
 		positionRight = int(t.winfo_screenwidth()/2 - windowWidth/2)
 		positionDown = int(t.winfo_screenheight()/2 - windowHeight/2)
 		t.geometry("+{}+{}".format(positionRight, positionDown))
-		t.mainloop()		 
+		t.attributes("-toolwindow", True)
+		formulario.attributes("-topmost", False)
+		t.attributes("-topmost", True)
+		v_cores = 1
+		
+def configura_tela_inicial():
+	global v_configura_tela_inicial
+	def on_close():
+		global v_configura_tela_inicial
+		v_configura_tela_inicial = 0
+	if v_configura_tela_inicial == 0:
+		t = tk.Toplevel()
+		t.geometry(resolucao_tela)
+		t.title('Configurações do Sistema')
+		Button(t, text='FECHAR', command=combine_funcs(on_close, t.destroy)).pack()
+		t.protocol("WM_DELETE_WINDOW", combine_funcs(on_close, t.destroy))
+		t.iconbitmap(default='transparent.ico')
+		windowWidth, windowHeight = resolucao_width, resolucao_height
+		positionRight = int(t.winfo_screenwidth()/2 - windowWidth/2)
+		positionDown = int(t.winfo_screenheight()/2 - windowHeight/2)
+		t.geometry("+{}+{}".format(positionRight, positionDown))
+		t.attributes("-toolwindow", True)
+		formulario.attributes("-topmost", False)
+		t.attributes("-topmost", True)
+		v_configura_tela_inicial = 1					 
 
 def executa_tela_inicial():
 	t = Tk()
@@ -92,34 +104,43 @@ executa_tela_inicial()
   
 # Cria formulario
 formulario = Tk()
-formulario.title = "Desenvolvimento Aberto"      
-      
+    
 # Cria componentes    
 ferramenta = Frame(height=130, bd=1, relief=RAISED)
  
 # Carrega Ícones    
-icone1 = Image.open("TOOLS_64x64.png")
-icone2 = Image.open("EXIT_64x64.png")
+icone1 = Image.open("COR_64x64.png")
+icone2 = Image.open("TOOLS_64x64.png")
+icone3 = Image.open("EXIT_64x64.png")
  
 # Cria Imagens
 imagem1 = ImageTk.PhotoImage(icone1)
 imagem2 = ImageTk.PhotoImage(icone2)
+imagem3 = ImageTk.PhotoImage(icone3)
  
 # Cria botões
-botao1 = Button(ferramenta, image=imagem1,relief=FLAT)
+botao1 = Button(ferramenta, image=imagem1,relief=FLAT, command=cores)
 
 def on_enter_botao1(e):
-	statusbarmenu['text'] = 'CONFIGURAÇÕES'
+	statusbarmenu['text'] = 'CORES'
 
 def on_leave_botao1(e):
 	statusbarmenu['text'] = ''
 
-botao2 = Button(ferramenta, image=imagem2,relief=FLAT)
+botao2 = Button(ferramenta, image=imagem2,relief=FLAT, command=configura_tela_inicial)
 
 def on_enter_botao2(e):
-	statusbarmenu['text'] = '                      SAIR'
+	statusbarmenu['text'] = '                  CONFIGURAÇÕES'
 
 def on_leave_botao2(e):
+	statusbarmenu['text'] = ''
+
+botao3 = Button(ferramenta, image=imagem3,relief=FLAT, command=client_exit)
+
+def on_enter_botao3(e):
+	statusbarmenu['text'] = '                                         SAIR'
+
+def on_leave_botao3(e):
 	statusbarmenu['text'] = ''
 
 botao1.bind("<Enter>", on_enter_botao1)
@@ -128,9 +149,13 @@ botao1.bind("<Leave>", on_leave_botao1)
 botao2.bind("<Enter>", on_enter_botao2)
 botao2.bind("<Leave>", on_leave_botao2)
 
+botao3.bind("<Enter>", on_enter_botao3)
+botao3.bind("<Leave>", on_leave_botao3)
+
 # Posiciona componentes
 botao1.pack(side=LEFT, padx=2,pady=2)
 botao2.pack(side=LEFT, padx=2,pady=2)
+botao3.pack(side=LEFT, padx=2,pady=2)
 ferramenta.pack(side=TOP, fill=X)
 
 # barra de status no rodapé
