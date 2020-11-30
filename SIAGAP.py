@@ -12,6 +12,7 @@ from PIL     import Image, ImageTk
 from Tkinter import Tk,    Frame  
 from Tkinter import Label, Button, LEFT, TOP, X, FLAT, RAISED, SUNKEN
 from tkinter.colorchooser import askcolor
+from tkinter import ttk
 
 import os
 import tkFileDialog
@@ -112,9 +113,59 @@ def cores():
 				etrDescricao.delete(0, tk.END)
 				lblcor_v['bg'] = 'white'
 				etrOrdenacao.delete(0, tk.END)
-				t.after(5000, apaga_mensagem)								
+				t.after(5000, apaga_mensagem)
+		def consultar():
+			def on_close_cdp_consultas():
+				u.grab_release()
+				t.grab_set()
+			u = tk.Toplevel()
+			u.grab_set()
+			u.resizable(width = 1, height = 1)
+			treev = ttk.Treeview(u, selectmode ='browse')
+			treev.pack(side ='right')
+			verscrlbar = ttk.Scrollbar(u, orient ="vertical", command = treev.yview)
+			verscrlbar.pack(side ='right', fill ='x')
+			treev.configure(xscrollcommand = verscrlbar.set)
+			treev["columns"] = ("1", "2", "3", "4")
+			treev['show'] = 'headings'
+			treev.column("1", width = 90, anchor ='c')
+			treev.column("2", width = 90, anchor ='se')
+			treev.column("3", width = 90, anchor ='se')
+			treev.column("4", width = 90, anchor ='se')
+			treev.heading("1", text ="SIGLA")
+			treev.heading("2", text ="DESCRIÇÂO")
+			treev.heading("3", text ="COR")
+			treev.heading("4", text ="ORDENAÇÃO")
+			u.geometry(resolucao_tela_cadastro)
+			u.title('Consulta cores - CDP')
+			u.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_cdp_consultas, u.destroy))
+			u.iconbitmap(default='transparent.ico')
+			
+			query = "select SIGLA, DESCRICAO, COR, ORDENACAO from CORES_CDP"
+			cursor.execute(query)
+			resultado = cursor.fetchall()
+			sigla = ""
+			descricao = ""
+			cor = ""
+			ordenacao = ""
+			
+			for i in resultado:				
+				sigla = i[0]
+				descricao = i[1]
+				cor = i[2]
+				ordenacao = i[3]
+				treev.tag_configure(cor, background=cor)
+				treev.insert("", "end", text = sigla, values=(sigla, descricao, cor, ordenacao), tags = [cor])				
+			
+			windowWidth, windowHeight = resolucao_width_cadastro, resolucao_height_cadastro
+			positionRight = int(t.winfo_screenwidth()/2 - windowWidth/2)
+			positionDown = int(t.winfo_screenheight()/2 - windowHeight/2)
+			u.geometry("+{}+{}".format(positionRight, positionDown))
+			u.attributes("-toolwindow", True)
+			u.attributes("-topmost", True)																	
 		if v_cores_cdp == 0:
 			t = tk.Toplevel()
+			t.grab_set()
 			t.geometry(resolucao_tela_cadastro)
 			t.title('Cores - CDP')			
 			content = tk.Frame(t)
@@ -143,8 +194,10 @@ def cores():
 			btncor.grid(column=2, row=2, padx=5, pady=5, sticky=tk.S)
 			lblMensagem = tk.Label(messageBar, fg="red", text = "", font=("Verdana", 8, 'bold'))
 			lblMensagem.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.S)
-			botao1 = Button(footer, image=v_cores_cdp_icon_img_2, relief=FLAT, command=incluir)
-			botao1.grid(column=0, row=8)	
+			botaoIncluir = Button(footer, image=v_cores_cdp_icon_img_2, relief=FLAT, command=incluir)
+			botaoIncluir.grid(column=0, row=8)
+			botaoPesquisar = Button(footer, image=v_cores_cdp_icon_img_3, relief=FLAT, command=consultar)
+			botaoPesquisar.grid(column=1, row=8)	
 			t.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_cdp, t.destroy))
 			t.iconbitmap(default='transparent.ico')
 			windowWidth, windowHeight = resolucao_width_cadastro, resolucao_height_cadastro
@@ -229,6 +282,7 @@ icone2 = Image.open("TOOLS_64x64.png")
 icone3 = Image.open("EXIT_64x64.png")
 v_cores_cdp_icon_1 = Image.open("COLOR_16x16.png")
 v_cores_cdp_icon_2 = Image.open("ADD_16x16.png")
+v_cores_cdp_icon_3 = Image.open("SEARCH_16x16.png")
  
 # Cria Imagens
 imagem1 = ImageTk.PhotoImage(icone1)
@@ -236,6 +290,7 @@ imagem2 = ImageTk.PhotoImage(icone2)
 imagem3 = ImageTk.PhotoImage(icone3)
 v_cores_cdp_icon_img_1 = ImageTk.PhotoImage(v_cores_cdp_icon_1)
 v_cores_cdp_icon_img_2 = ImageTk.PhotoImage(v_cores_cdp_icon_2)
+v_cores_cdp_icon_img_3 = ImageTk.PhotoImage(v_cores_cdp_icon_3)
  
 # Cria botões
 botao1 = Button(ferramenta, image=imagem1,relief=FLAT, command=cores)
