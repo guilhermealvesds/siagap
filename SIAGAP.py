@@ -13,6 +13,7 @@ from Tkinter import Tk,    Frame
 from Tkinter import Label, Button, LEFT, TOP, X, FLAT, RAISED, SUNKEN
 from tkinter.colorchooser import askcolor
 from tkinter import ttk
+from tkinter import messagebox
 
 import os
 import tkFileDialog
@@ -35,7 +36,7 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS CORES_CDP (
 v_configura_tela_inicial = 0
 v_cores = 0
 v_cores_cdp = 0
-v_cores_cdp_modo = ''
+v_cores_cdp_modo = 'INCLUSAO'
 
 resolucao_tela = '640x320'
 resolucao_width = 640
@@ -45,6 +46,10 @@ resolucao_tela_cadastro = '400x250'
 resolucao_width_cadastro = 400
 resolucao_height_cadastro = 250
 
+resolucao_tela_mensagem = '600x300'
+resolucao_width_mensagem = 600
+resolucao_height_mesagem = 300
+
 # define e implementa as funções
 def client_exit():
 	exit()
@@ -53,7 +58,11 @@ def combine_funcs(*funcs):
 	def combined_func(*args, **kwargs):
 		for f in funcs:
 			f(*args, **kwargs)
-	return combined_func	
+	return combined_func
+	
+def msgSimNao():
+	a = tk.toplevel
+	a.grab_set()	
 
 def cores():
 	global v_cores
@@ -103,9 +112,11 @@ def cores():
 				if v_cores_cdp_modo == 'INCLUSAO':
 					if v_sigla == '':
 						lblMensagem['text'] = '*PREENCHA A SIGLA'
+						t.after(5000, apaga_mensagem)
 						return 0						
 					if len(v_sigla) > 1:
 						lblMensagem['text'] = '*A SIGLA DEVE TER APENAS UM CARACTERE'
+						t.after(5000, apaga_mensagem)
 						return 0
 					
 					dbRollNo = ""
@@ -116,10 +127,12 @@ def cores():
 						dbRollNo=i[0]
 					if(v_sigla == dbRollNo):
 						lblMensagem['text'] = '*REGISTRO JÁ EXISTE'
+						t.after(5000, apaga_mensagem)
 						return 0
 				
 				if v_ordenacao == '':
 					lblMensagem['text'] = '*PREENCHA A ORDENACAO'
+					t.after(5000, apaga_mensagem)
 					return 0
 					
 				return 1
@@ -186,15 +199,17 @@ def cores():
 				etrSigla.focus()
 			def exclui():
 				if v_cores_cdp_modo == 'EDICAO':
-					etrSigla['state'] = 'normal'
-					sigla = etrSigla.get()
-					Delete = "delete from CORES_CDP where SIGLA='%s'" %(sigla)
-					cursor.execute(Delete)
-					con.commit()
-					limpa()
-					lblMensagem['fg'] = '#2D8C2B'
-					lblMensagem['text'] = '*REGISTRO EXCLUÍDO COM SUCESSO'
-					t.after(4000, apaga_mensagem)
+					MsgBox = tk.messagebox.askquestion ('Excluir Cor','Deseja excluir esse registro?',icon = 'warning', parent = t)
+					if MsgBox == 'yes':
+						etrSigla['state'] = 'normal'
+						sigla = etrSigla.get()
+						Delete = "delete from CORES_CDP where SIGLA='%s'" %(sigla)
+						cursor.execute(Delete)
+						con.commit()
+						limpa()
+						lblMensagem['fg'] = '#2D8C2B'
+						lblMensagem['text'] = '*REGISTRO EXCLUÍDO COM SUCESSO'
+						t.after(4000, apaga_mensagem)
 			def iniciaEdicao():
 				etrSigla['state'] = 'normal'
 				etrSigla.delete(0, tk.END)
@@ -205,6 +220,24 @@ def cores():
 				lblcor_v['bg'] = selecionado[2]
 				etrOrdenacao.delete(0, tk.END)
 				etrOrdenacao.insert(0, selecionado[3])
+			def to_uppercaseSigla(*args):
+				varEtrSigla.set(varEtrSigla.get().upper())
+			def to_uppercaseDescricao(*args):
+				varEtrDescricao.set(varEtrDescricao.get().upper())
+			def to_uppercaseOrdenacao(*args):
+				varEtrOrdenacao.set(varEtrOrdenacao.get().upper())
+			def on_enter_botaoIncluir(e):
+				statusbarrodape['text'] = 'SALVAR'
+			def on_leave_botaoIncluir(e):
+				statusbarrodape['text'] = ''
+			def on_enter_botaoLimpar(e):
+				statusbarrodape['text'] = '        LIMPAR'
+			def on_leave_botaoLimpar(e):
+				statusbarrodape['text'] = ''
+			def on_enter_botaoApagar(e):
+				statusbarrodape['text'] = '                EXCLUIR'
+			def on_leave_botaoApagar(e):
+				statusbarrodape['text'] = ''
 			t = tk.Toplevel()
 			t.grab_set()
 			t.geometry(resolucao_tela_cadastro)
@@ -212,9 +245,11 @@ def cores():
 			content = tk.Frame(t)
 			messageBar = tk.Frame(t, height=30)
 			footer = tk.Frame(t, height=30)
+			status = tk.Frame(t, height=30)
 			content.pack(fill='both')
 			messageBar.pack(fill='both')
 			footer.pack(fill='both', side='bottom')
+			status.pack(fill='both', side = 'bottom')
 			lblsigla = Label(content, text = "Sigla:", font=("Verdana", 8, 'bold'))
 			lblsigla.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.N)
 			lbldescricao = tk.Label(content, text = "Descrição:", font=("Verdana", 8, 'bold'))
@@ -223,24 +258,56 @@ def cores():
 			lblcor.grid(column=0, row=2, ipadx=5, pady=5, sticky=tk.W+tk.S)
 			lblOrdenacao = tk.Label(content, text = "Ordenação:", font=("Verdana", 8, 'bold'))
 			lblOrdenacao.grid(column=0, row=3, ipadx=5, pady=5, sticky=tk.W+tk.S)
-			etrSigla = tk.Entry(content, width=20)
-			etrSigla.grid(column=1, row=0, padx=10, pady=5, sticky=tk.N)
-			etrDescricao = tk.Entry(content, width=20)
+			
+			varEtrSigla = tk.StringVar()		
+			etrSigla = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrSigla)
+			etrSigla.grid(column=1, row=0, padx=10, pady=5, sticky=tk.N)			
+			try:
+				varEtrSigla.trace_add('write', to_uppercaseSigla)
+			except AttributeError:
+				varEtrSigla.trace('w', to_uppercaseSigla)
+			
+			varEtrDescricao = tk.StringVar()
+			etrDescricao = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrDescricao)
 			etrDescricao.grid(column=1, row=1, padx=10, pady=5, sticky=tk.S)
-			lblcor_v = tk.Label(content, bg="white", width=17)
+			try:
+				varEtrDescricao.trace_add('write', to_uppercaseDescricao)
+			except AttributeError:
+				varEtrDescricao.trace('w', to_uppercaseDescricao)			
+			
+			lblcor_v = tk.Label(content, bg="white", width=28)
 			lblcor_v.grid(column=1, row=2)
-			etrOrdenacao = tk.Entry(content, width=20)
+			
+			varEtrOrdenacao = tk.StringVar()
+			etrOrdenacao = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrOrdenacao)
 			etrOrdenacao.grid(column=1, row=3, padx=10, pady=5, sticky=tk.S)
+			try:
+				varEtrOrdenacao.trace_add('write', to_uppercaseOrdenacao)
+			except AttributeError:
+				varEtrOrdenacao.trace('w', to_uppercaseOrdenacao)
+			
 			btncor = Button(content, image=v_cores_cdp_icon_img_1, relief=FLAT, command=escolhe_cor)
 			btncor.grid(column=2, row=2, padx=5, pady=5, sticky=tk.S)
 			lblMensagem = tk.Label(messageBar, fg="red", text = "", font=("Verdana", 8, 'bold'))
 			lblMensagem.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.S)
+			
 			botaoIncluir = Button(footer, image=v_cores_cdp_icon_img_2, relief=FLAT, command=insere)
 			botaoIncluir.grid(column=0, row=8)
+			botaoIncluir.bind("<Enter>", on_enter_botaoIncluir)
+			botaoIncluir.bind("<Leave>", on_leave_botaoIncluir)
+			
 			botaoLimpar = Button(footer, image=v_cores_cdp_icon_img_4, relief=FLAT, command=limpa)
 			botaoLimpar.grid(column=1, row=8)
+			botaoLimpar.bind("<Enter>", on_enter_botaoLimpar)
+			botaoLimpar.bind("<Leave>", on_leave_botaoLimpar)			
+			
 			botaoApagar = Button(footer, image=v_cores_cdp_icon_img_5, relief=FLAT, command=exclui)
 			botaoApagar.grid(column=2, row=8)
+			botaoApagar.bind("<Enter>", on_enter_botaoApagar)
+			botaoApagar.bind("<Leave>", on_leave_botaoApagar)			
+			
+			statusbarrodape = tk.Label(status, text="", font=("Verdana", 10), anchor=tk.W)
+			statusbarrodape.pack(side=tk.BOTTOM, fill=tk.X)
 			t.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_novo, t.destroy))
 			t.iconbitmap(default='transparent.ico')
 			windowWidth, windowHeight = resolucao_width_cadastro, resolucao_height_cadastro
@@ -325,10 +392,10 @@ def cores():
 		botaoFechar.pack(side=tk.RIGHT, padx = 5, pady = 5)
 		botaoEditar = Button(footer, text='EDITAR', command=edicao)
 		botaoEditar.pack(side=tk.RIGHT, padx = 5, pady = 5)
+		botaoExportar = Button(footer, text='EXPORTAR', command=exportar)
+		botaoExportar.pack(side=tk.RIGHT, padx = 5, pady = 5)
 		botaoNovo = Button(footer, text='NOVO', command=novo)
 		botaoNovo.pack(side=tk.RIGHT, padx = 5, pady = 5)
-		botaoExportar = Button(footer, text='NOVO', command=exportar)
-		botaoExportar.pack(side=tk.RIGHT, padx = 5, pady = 5)
 		u.geometry(resolucao_tela_cadastro)
 		u.title('Consulta cores - CDP')
 		u.protocol("WM_DELETE_WINDOW", u.destroy)
@@ -413,10 +480,10 @@ icone1 = Image.open("COR_64x64.png")
 icone2 = Image.open("TOOLS_64x64.png")
 icone3 = Image.open("EXIT_64x64.png")
 v_cores_cdp_icon_1 = Image.open("COLOR_16x16.png")
-v_cores_cdp_icon_2 = Image.open("ADD_16x16.png")
+v_cores_cdp_icon_2 = Image.open("ADD_32x32.png")
 v_cores_cdp_icon_3 = Image.open("SEARCH_16x16.png")
-v_cores_cdp_icon_4 = Image.open("CLEAR_16x16.png")
-v_cores_cdp_icon_5 = Image.open("DELETE_16x16.png")
+v_cores_cdp_icon_4 = Image.open("CLEAR_32x32.png")
+v_cores_cdp_icon_5 = Image.open("DELETE_32x32.png")
  
 # Cria Imagens
 imagem1 = ImageTk.PhotoImage(icone1)
