@@ -34,7 +34,7 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS CORES_CDP (
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS CORES_AF (
             CODIGO INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            SIGLA CHARACTER(1)NOT NULL,
+            SIGLA CHARACTER(3)NOT NULL,
             DESCRICAO VARCHAR(20),
             INICIAL REAL NOT NULL,
             FINAL REAL NOT NULL,
@@ -111,10 +111,12 @@ def cores():
 				if v_cores_cdp_modo == 'INCLUSAO':
 					if v_sigla == '':
 						lblMensagem['text'] = '*PREENCHA A SIGLA'
+						etrSigla.focus()
 						t.after(5000, apaga_mensagem)
 						return 0						
 					if len(v_sigla) > 1:
 						lblMensagem['text'] = '*A SIGLA DEVE TER APENAS UM CARACTERE'
+						etrSigla.focus()
 						t.after(5000, apaga_mensagem)
 						return 0
 					
@@ -126,16 +128,19 @@ def cores():
 						dbRollNo=i[0]
 					if(v_sigla == dbRollNo):
 						lblMensagem['text'] = '*REGISTRO JÁ EXISTE'
+						etrSigla.focus()
 						t.after(5000, apaga_mensagem)
 						return 0
 						
 				if len(v_descricao) > 20:
 					lblMensagem['text'] = '*A DESCRIÇÃO PODE TER APENAS 20 CARACTERES'
+					etrDescricao.focus()
 					t.after(5000, apaga_mensagem)
 					return 0
 				
 				if v_ordenacao == '':
 					lblMensagem['text'] = '*PREENCHA A ORDENACAO'
+					etrOrdenacao.focus()
 					t.after(5000, apaga_mensagem)
 					return 0
 					
@@ -333,7 +338,7 @@ def cores():
 			buttons_dict = {}
 			
 			columns = 6									
-			query = "select SIGLA, DESCRICAO, COR, ORDENACAO, (SELECT COUNT(SIGLA) FROM CORES_CDP) AS LINHAS from CORES_CDP"
+			query = "select SIGLA, DESCRICAO, COR, ORDENACAO, (SELECT COUNT(SIGLA) FROM CORES_CDP) AS LINHAS from CORES_CDP ORDER BY ORDENACAO"
 			cursor.execute(query)
 			resultado = cursor.fetchall()
 			sigla = ""
@@ -507,40 +512,66 @@ def cores():
 												
 				v_sigla = etrSigla.get()
 				v_descricao = etrDescricao.get()
+				v_inicial = etrInicial.get()
+				v_final = etrFinal.get()
 				v_ordenacao = etrOrdenacao.get()
 				lblMensagem['fg'] = 'red'
 				
 				if v_cores_cdp_modo == 'INCLUSAO':
 					if v_sigla == '':
 						lblMensagem['text'] = '*PREENCHA A SIGLA'
-						t.after(5000, apaga_mensagem)
+						etrSigla.focus()
+						t.after(5000, apaga_mensagem)						
 						return 0						
-					if len(v_sigla) > 1:
-						lblMensagem['text'] = '*A SIGLA DEVE TER APENAS UM CARACTERE'
+					if len(v_sigla) > 3:
+						lblMensagem['text'] = '*A SIGLA DEVE TER NO MÁXIMO 3 CARACTERES'
+						etrSigla.focus()
 						t.after(5000, apaga_mensagem)
 						return 0
-					
-					dbRollNo = ""
-					Select="select SIGLA from CORES_CDP where SIGLA='%s'" %(v_sigla)
-					cursor.execute(Select)
-					result = cursor.fetchall()
-					for i in result:
-						dbRollNo=i[0]
-					if(v_sigla == dbRollNo):
-						lblMensagem['text'] = '*REGISTRO JÁ EXISTE'
-						t.after(5000, apaga_mensagem)
-						return 0
-						
+				
 				if len(v_descricao) > 20:
 					lblMensagem['text'] = '*A DESCRIÇÃO PODE TER APENAS 20 CARACTERES'
+					etrDescricao.focus()
+					t.after(5000, apaga_mensagem)
+					return 0
+					
+				if v_ordenacao == '':
+					lblMensagem['text'] = '*PREENCHA A ORDENACAO'
+					etrOrdenacao.focus()
 					t.after(5000, apaga_mensagem)
 					return 0
 				
-				if v_ordenacao == '':
-					lblMensagem['text'] = '*PREENCHA A ORDENACAO'
+				if v_inicial == '':
+					lblMensagem['text'] = '*PREENCHA O VALOR INICIAL'
+					etrInicial.focus()
 					t.after(5000, apaga_mensagem)
 					return 0
 					
+				if v_final == '':
+					lblMensagem['text'] = '*PREENCHA O VALOR FINAL'
+					etrFinal.focus()
+					t.after(5000, apaga_mensagem)
+					return 0
+
+				dbRollNo = ""				
+				Select="select INICIAL, FINAL from CORES_AF WHERE CODIGO not in ('%s')"%(selecionado[0])
+				cursor.execute(Select)
+				result = cursor.fetchall()
+				for i in result:
+					inicial = i[0]
+					final = i[1]					
+					if ((float(v_inicial) >= float(inicial)) and (float(v_inicial) <= float(final))) or ((float(v_final) >= float(inicial)) and (float(v_final) <= float(final))):						
+						lblMensagem['text'] = '*A FAIXA DE VALORES JÁ ESTÁ SENDO UTILIZADA'
+						etrInicial.focus()
+						t.after(5000, apaga_mensagem)
+						return 0
+					
+				if float(v_inicial) > float(v_final):
+					lblMensagem['text'] = '*VALOR INICIAL DEVE SER MENOR QUE VALOR FINAL'
+					etrInicial.focus()
+					t.after(5000, apaga_mensagem)
+					return 0					
+									
 				return 1
 				
 			def insere():
@@ -755,7 +786,7 @@ def cores():
 			buttons_dict = {}
 			
 			columns = 8									
-			query = "select CODIGO, SIGLA, DESCRICAO, COR, INICIAL, FINAL, ORDENACAO, (SELECT COUNT(SIGLA) FROM CORES_AF) AS LINHAS from CORES_AF"
+			query = "select CODIGO, SIGLA, DESCRICAO, COR, INICIAL, FINAL, ORDENACAO, (SELECT COUNT(SIGLA) FROM CORES_AF) AS LINHAS from CORES_AF ORDER BY ORDENACAO"
 			cursor.execute(query)
 			resultado = cursor.fetchall()
 			sigla = ""
