@@ -75,7 +75,22 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS CORCABECALHO (
 cursor.execute("""CREATE TABLE IF NOT EXISTS SITUACOESBEZERRO (
             SIGLA CHARACTER(5)NOT NULL PRIMARY KEY,
             DESCRICAO VARCHAR(25))""")
-                        
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS CAUSASDESCARTE (
+            SIGLA CHARACTER(3)NOT NULL PRIMARY KEY, 
+            DESCRICAO VARCHAR(25))""")
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS RACAS (
+            SIGLA CHARACTER(3)NOT NULL PRIMARY KEY, 
+            DESCRICAO VARCHAR(25))""")
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS SITUACOESMATRIZES (
+            SIGLA CHARACTER(3)NOT NULL PRIMARY KEY,
+            COR VARCHAR(7), 
+            SIT CHARACTER(3),
+            SEXO CHARACTER(1),
+            DESCRICAO VARCHAR(25))""")
+
 # declaração variáveis
 
 v_configura_tela_inicial = 0
@@ -2379,9 +2394,9 @@ def cores():
 				etrSigla.delete(0, tk.END)
 				etrSigla.insert(0, selecionado[0])
 				etrSigla['state'] = 'disabled'
-				lblcor_v['bg'] = selecionado[2]
+				lblcor_v['bg'] = selecionado[1]
 				etrOrdenacao.delete(0, tk.END)
-				etrOrdenacao.insert(0, selecionado[3])
+				etrOrdenacao.insert(0, selecionado[2])
 			def to_uppercaseSigla(*args):
 				varEtrSigla.set(varEtrSigla.get().upper())
 			def to_uppercaseOrdenacao(*args):
@@ -3058,6 +3073,1093 @@ def situacoes_bezerros():
 	u.geometry("+{}+{}".format(positionRight, positionDown))
 	u.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_avaliacao_visual_bezerro, u.destroy))			
 	u.attributes("-toolwindow", True)	
+
+def causas():
+	selecionado = {
+	"sigla": "",
+	"descrição": ""
+		}
+	def on_close_avaliacao_visual_bezerro():
+		formulario.grab_set()
+		u.destroy()																		
+	def novo():
+		global selecionado
+		global v_cores_cdp_modo
+		def consiste():
+			global v_cores_cdp_modo
+											
+			v_sigla = etrSigla.get()
+			v_descricao = etrDescricao.get()
+			
+			if v_cores_cdp_modo == 'INCLUSAO':
+				if v_sigla == '':
+					lblMensagem['text'] = '*PREENCHA A SIGLA'
+					etrSigla.focus()
+					t.after(5000, apaga_mensagem)
+					return 0						
+				if len(v_sigla) > 3:
+					lblMensagem['text'] = '*A SIGLA DEVE TER NO MÁXIMO 3 CARACTERES'
+					etrSigla.focus()
+					t.after(5000, apaga_mensagem)
+					return 0
+				
+				dbRollNo = ""
+				Select="select SIGLA from CAUSASDESCARTE where SIGLA='%s'" %(v_sigla)
+				cursor.execute(Select)
+				result = cursor.fetchall()
+				for i in result:
+					dbRollNo=i[0]
+				if(v_sigla == dbRollNo):
+					lblMensagem['text'] = '*REGISTRO JÁ EXISTE'
+					etrSigla.focus()
+					t.after(5000, apaga_mensagem)
+					return 0
+					
+			if len(v_descricao) > 20:
+				lblMensagem['text'] = '*A DESCRIÇÃO DEVE TER NO MÁXIMO 25 CARACTERES'
+				etrDescricao.focus()
+				t.after(5000, apaga_mensagem)
+				return 0
+								
+			return 1
+			
+		def insere():
+			global v_cores_cdp_modo			
+			
+			r = consiste()
+			
+			if bool(r):
+				etrSigla['state'] = 'normal'
+				
+				if v_cores_cdp_modo == 'INCLUSAO':
+					Insert=''' Insert into CAUSASDESCARTE(SIGLA, DESCRICAO) values(?,?) '''
+					Sigla = etrSigla.get()
+					Descricao = etrDescricao.get()
+					Value=(Sigla, Descricao)
+					cursor.execute(Insert, Value)
+					con.commit()						
+				if v_cores_cdp_modo == 'EDICAO':
+					sigla = etrSigla.get()
+					descricao = etrDescricao.get()
+					Update = "update CAUSASDESCARTE set SIGLA='%s', DESCRICAO='%s' where sigla='%s'" %(sigla, descricao, sigla)
+					cursor.execute(Update)
+					con.commit()
+					etrSigla.delete(0, tk.END)
+					etrDescricao.delete(0, tk.END)
+					etrSigla.focus()
+					v_cores_cdp_modo = 'INCLUSAO'
+				combine_funcs(on_close_novo(), t.destroy())				
+		def apaga_mensagem():
+			lblMensagem['text'] = ''
+		def on_close_novo():
+			global v_cores_cdp_modo
+			
+			v_cores_cdp_modo = 'INCLUSAO'			
+			popular_grid()
+			u.grab_set()																						
+		def limpa():
+			global v_cores_cdp_modo
+			
+			etrSigla['state'] = 'normal'
+			v_cores_cdp_modo = 'INCLUSAO'
+			etrSigla.delete(0, tk.END)
+			etrDescricao.delete(0, tk.END)
+			etrSigla.focus()
+		def iniciaEdicao():
+			etrSigla['state'] = 'normal'
+			etrSigla.delete(0, tk.END)
+			etrSigla.insert(0, selecionado[0])
+			etrSigla['state'] = 'disabled'
+			etrDescricao.delete(0, tk.END)
+			etrDescricao.insert(0, selecionado[1])
+		def to_uppercaseSigla(*args):
+			varEtrSigla.set(varEtrSigla.get().upper())
+		def to_uppercaseDescricao(*args):
+			varEtrDescricao.set(varEtrDescricao.get().upper())
+		def on_enter_botaoIncluir(e):
+			statusbarrodape['text'] = 'SALVAR'
+		def on_leave_botaoIncluir(e):
+			statusbarrodape['text'] = ''
+		def on_enter_botaoLimpar(e):
+			statusbarrodape['text'] = '        LIMPAR'
+		def on_leave_botaoLimpar(e):
+			statusbarrodape['text'] = ''
+		def on_enter_botaoSair(e):
+			statusbarrodape['text'] = '                FECHAR'
+		def on_leave_botaoSair(e):
+			statusbarrodape['text'] = ''
+		t = tk.Toplevel()
+		t.grab_set()
+		t.geometry(resolucao_tela_cadastro)
+		t.title('Observações - Causas')
+		content = tk.Frame(t)
+		messageBar = tk.Frame(t, height=30)
+		footer = tk.Frame(t, height=30)
+		status = tk.Frame(t, height=30)
+		content.pack(fill='both')
+		messageBar.pack(fill='both')
+		footer.pack(fill='both', side='bottom')
+		status.pack(fill='both', side = 'bottom')
+		lblsigla = Label(content, text = "Sigla:", font=("Verdana", 8, 'bold'))
+		lblsigla.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.N)
+		lbldescricao = tk.Label(content, text = "Descrição:", font=("Verdana", 8, 'bold'))
+		lbldescricao.grid(column=0, row=1, ipadx=5, pady=5, sticky=tk.W+tk.S)
+		
+		varEtrSigla = tk.StringVar()		
+		etrSigla = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrSigla)
+		etrSigla.grid(column=1, row=0, padx=10, pady=5, sticky=tk.N)			
+		try:
+			varEtrSigla.trace_add('write', to_uppercaseSigla)
+		except AttributeError:
+			varEtrSigla.trace('w', to_uppercaseSigla)
+		
+		varEtrDescricao = tk.StringVar()
+		etrDescricao = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrDescricao)
+		etrDescricao.grid(column=1, row=1, padx=10, pady=5, sticky=tk.S)
+		try:
+			varEtrDescricao.trace_add('write', to_uppercaseDescricao)
+		except AttributeError:
+			varEtrDescricao.trace('w', to_uppercaseDescricao)			
+
+		lblMensagem = tk.Label(messageBar, fg="red", text = "", font=("Verdana", 8, 'bold'))
+		lblMensagem.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.S)
+		
+		botaoIncluir = Button(footer, image=v_cores_cdp_icon_img_2, relief=FLAT, command=insere)
+		botaoIncluir.grid(column=0, row=8)
+		botaoIncluir.bind("<Enter>", on_enter_botaoIncluir)
+		botaoIncluir.bind("<Leave>", on_leave_botaoIncluir)
+		
+		botaoLimpar = Button(footer, image=v_cores_cdp_icon_img_4, relief=FLAT, command=limpa)
+		botaoLimpar.grid(column=1, row=8)
+		botaoLimpar.bind("<Enter>", on_enter_botaoLimpar)
+		botaoLimpar.bind("<Leave>", on_leave_botaoLimpar)
+		
+		botaoSair = Button(footer, image=v_cores_cdp_icon_img_5, relief=FLAT, command = combine_funcs(on_close_novo, t.destroy))
+		botaoSair.grid(column=2, row=8)
+		botaoSair.bind("<Enter>", on_enter_botaoSair)
+		botaoSair.bind("<Leave>", on_leave_botaoSair)						
+				
+		statusbarrodape = tk.Label(status, text="", font=("Verdana", 10), anchor=tk.W)
+		statusbarrodape.pack(side=tk.BOTTOM, fill=tk.X)
+		t.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_novo, t.destroy))
+		t.iconbitmap(default='transparent.ico')
+		windowWidth, windowHeight = resolucao_width_cadastro, resolucao_height_cadastro
+		positionRight = int(t.winfo_screenwidth()/2 - windowWidth/2)
+		positionDown = int(t.winfo_screenheight()/2 - windowHeight/2)
+		t.geometry("+{}+{}".format(positionRight, positionDown))			
+		if v_cores_cdp_modo == 'EDICAO':
+			iniciaEdicao()
+		if etrSigla['state'] == 'normal':
+			etrSigla.focus()
+			
+		t.attributes("-toolwindow", True)			
+	def criacao():
+		global selecionado
+		global v_cores_cdp_modo
+		
+		selecionado = ()
+		v_cores_cdp_modo = 'INCLUSAO'
+		novo()
+	def edicao(sigla, descricao):
+		global selecionado
+		global v_cores_cdp_modo
+		
+		selecionado = (sigla, descricao)
+		
+		if selecionado <> '':
+			v_cores_cdp_modo = 'EDICAO'
+			novo()			
+	def popular_grid():
+		global selecionado
+		
+		COORDS_LIST = []
+		buttons_dict = {}
+		
+		columns = 4									
+		query = "select SIGLA, DESCRICAO, (SELECT COUNT(SIGLA) FROM CAUSASDESCARTE) AS LINHAS from CAUSASDESCARTE"
+		cursor.execute(query)
+		resultado = cursor.fetchall()
+		sigla = ""
+		descricao = ""
+		
+		k = 0
+								
+		for i in resultado:
+			k = k + 1
+			for j in range(0, columns):
+				coord = str(k)+"_"+str(j)
+				COORDS_LIST.append(coord)
+				
+				try:
+					widget = frame_buttons.grid_slaves(row=k, column=j)[0]
+					widget.destroy()
+				except:
+					pass
+					
+				try:
+					widget = buttons_dict[COORDS_LIST[-1]].grid_slaves(row=k, column=j)[0]
+					widget.destroy()
+				except:
+					pass
+					
+				sigla = i[0]
+				descricao = i[1]
+				linhas = i[2]
+								
+				if j == 2:						
+					buttons_dict[COORDS_LIST[-1]] = tk.Button(frame_buttons, text='EDITAR', font=("Verdana", 8))
+					buttons_dict[COORDS_LIST[-1]]["command"] = lambda vSigla = sigla, vDescricao = descricao: edicao(vSigla, vDescricao)
+					buttons_dict[COORDS_LIST[-1]].grid(row = k, column = j, sticky = 'news', padx = 1, pady = 1)
+				elif j == 3:						
+					buttons_dict[COORDS_LIST[-1]] = tk.Button(frame_buttons, text='EXCLUIR', font=("Verdana", 8))
+					buttons_dict[COORDS_LIST[-1]]["command"] = lambda vSigla = sigla, vLinhas = linhas + 1, vColunas = columns: exclui(vSigla, vLinhas, vColunas)
+					buttons_dict[COORDS_LIST[-1]].grid(row = k, column = j, sticky = 'news', padx = 1, pady = 1)						
+				else:
+					b = tk.Label(frame_buttons, anchor=W, text='', borderwidth=2, relief="groove")
+					
+					if j == 0:
+						b['text'] = i[0]
+						b['width'] = 10
+					if j == 1:
+						b['text'] = i[1]
+						b['width'] = 30						
+					b.grid(row=k, column=j, sticky='news')		
+									
+		# Update buttons frames idle tasks to let tkinter calculate buttons sizes
+		frame_buttons.update_idletasks()
+	def exclui(sigla, linhas, colunas):
+		MsgBox = tk.messagebox.askquestion ('Excluir Cor','Deseja excluir esse registro?',icon = 'warning', parent = u)
+		if MsgBox == 'yes':			
+			for i in range(1, linhas):
+				for j in range(0, colunas):
+					try:						
+						widget = frame_buttons.grid_slaves(row = i, column = j)[0]
+						widget.destroy()							
+					except:
+						pass						
+					
+					try:							
+						widget = buttons_dict[COORDS_LIST[-1]].grid_slaves(row = i, column = j)[0]
+						widget.destroy()
+					except:
+						pass						
+			
+			Delete = "delete from CAUSASDESCARTE where SIGLA='%s'" %(sigla)
+			cursor.execute(Delete)
+			con.commit()				
+					
+			popular_grid()														
+	u = tk.Toplevel()
+	u.grab_set()
+	u.geometry(resolucao_tela_consulta)
+	u.title('Observações - Causas')
+	
+	frame_top = tk.Frame(u)
+	frame_top.grid(sticky='news', padx=1)
+	
+	frame_main = tk.Frame(u)
+	frame_main.grid(sticky='news')
+	
+	label1 = tk.Label(frame_top, text="SIGLA", fg="black", font=("Verdana", 8, 'bold'), width=9, relief="groove", anchor=W)
+	label1.grid(row=0, column=0)
+	
+	label2 = tk.Label(frame_top, text="DESCRIÇÃO", fg="black", font=("Verdana", 8, 'bold'), width = 26, relief="groove", anchor=W)
+	label2.grid(row=0, column=1)
+		
+	# Create a frame for the canvas with non-zero row&column weights
+	frame_canvas = tk.Frame(frame_main)
+	frame_canvas.grid(row=1, column=0, pady=(5, 0), sticky='nw')
+	frame_canvas.grid_rowconfigure(0, weight=1)
+	frame_canvas.grid_columnconfigure(0, weight=1)
+	# Set grid_propagate to False to allow 5-by-5 buttons resizing later
+	frame_canvas.grid_propagate(False)
+	
+	# Add a canvas in that frame
+	canvas = tk.Canvas(frame_canvas, bg = "#FFFFFF")
+	canvas.grid(row=0, column=0, sticky="news")
+	
+	# Link a scrollbar to the canvas
+	vsb = tk.Scrollbar(frame_canvas, orient="vertical", command=canvas.yview)
+	vsb.grid(row=0, column=1, sticky='ns')
+	canvas.configure(yscrollcommand=vsb.set)
+	
+	# Create a frame to contain the buttons
+	frame_buttons = tk.Frame(canvas, bg="#FFFFFF")
+	canvas.create_window((0, 0), window=frame_buttons, anchor='nw')
+			
+	popular_grid()
+			
+	# Resize the canvas frame to show exactly 5-by-5 buttons and the scrollbar
+			
+	frame_canvas.config(width=680, height=260)
+	
+	# Set the canvas scrolling region
+	canvas.config(scrollregion=canvas.bbox("all"))
+	
+	frame_bottom = tk.Frame(u)
+	frame_bottom.grid(sticky='news', padx=1)
+	
+	botaoNovo = tk.Button(frame_bottom, text='NOVO', font=("Verdana", 8), command=lambda : criacao())
+	botaoNovo.grid(row=2, column=0)
+
+	botaoFechar = tk.Button(frame_bottom, text='FECHAR', font=("Verdana", 8), command=lambda : on_close_avaliacao_visual_bezerro())
+	botaoFechar.grid(row=2, column=1)
+
+	windowWidth, windowHeight = resolucao_width_consulta, resolucao_height_consulta
+	positionRight = int(formulario.winfo_screenwidth()/2 - windowWidth/2)
+	positionDown = int(formulario.winfo_screenheight()/2 - windowHeight/2)
+	u.geometry("+{}+{}".format(positionRight, positionDown))
+	u.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_avaliacao_visual_bezerro, u.destroy))			
+	u.attributes("-toolwindow", True)
+
+def situacoes_matrizes():
+	selecionado = {
+	"sigla": "",
+	"descrição": "",
+	"cor": "",
+	"ordenação": ""
+		}
+	def on_close_cores_cdp():
+		formulario.grab_set()
+		u.destroy()																		
+	def novo():
+		global selecionado
+		global v_cores_cdp_modo
+		def escolhe_cor():
+			color_code = askcolor(parent = t, title = "Selecionar cor")
+			lblcor_v['bg'] = color_code[1]
+		def consiste():
+			global v_cores_cdp_modo
+											
+			v_sigla = etrSigla.get()
+			v_descricao = etrDescricao.get()
+			v_ordenacao = etrOrdenacao.get()
+			lblMensagem['fg'] = 'red'
+			
+			if v_cores_cdp_modo == 'INCLUSAO':
+				if v_sigla == '':
+					lblMensagem['text'] = '*PREENCHA A SIGLA'
+					etrSigla.focus()
+					t.after(5000, apaga_mensagem)
+					return 0						
+				if len(v_sigla) > 1:
+					lblMensagem['text'] = '*A SIGLA DEVE TER APENAS UM CARACTERE'
+					etrSigla.focus()
+					t.after(5000, apaga_mensagem)
+					return 0
+				
+				dbRollNo = ""
+				Select="select SIGLA from CORES_CDP where SIGLA='%s'" %(v_sigla)
+				cursor.execute(Select)
+				result = cursor.fetchall()
+				for i in result:
+					dbRollNo=i[0]
+				if(v_sigla == dbRollNo):
+					lblMensagem['text'] = '*REGISTRO JÁ EXISTE'
+					etrSigla.focus()
+					t.after(5000, apaga_mensagem)
+					return 0
+					
+			if len(v_descricao) > 20:
+				lblMensagem['text'] = '*A DESCRIÇÃO DEVE TER NO MÁXIMO 20 CARACTERES'
+				etrDescricao.focus()
+				t.after(5000, apaga_mensagem)
+				return 0
+			
+			if v_ordenacao == '':
+				lblMensagem['text'] = '*PREENCHA A ORDENACAO'
+				etrOrdenacao.focus()
+				t.after(5000, apaga_mensagem)
+				return 0
+				
+			return 1
+			
+		def insere():
+			global v_cores_cdp_modo			
+			
+			r = consiste()
+			
+			if bool(r):
+				etrSigla['state'] = 'normal'
+				
+				if v_cores_cdp_modo == 'INCLUSAO':
+					Insert=''' Insert into CORES_CDP(SIGLA, DESCRICAO, COR, ORDENACAO) values(?,?,?,?) '''
+					Sigla = etrSigla.get()
+					Descricao = etrDescricao.get()
+					Cor = lblcor_v['bg']
+					Ordenacao = etrOrdenacao.get()
+					Value=(Sigla, Descricao, Cor, Ordenacao)
+					cursor.execute(Insert, Value)
+					con.commit()
+					lblMensagem['fg'] = '#2D8C2B'
+					lblMensagem['text'] = '*REGISTRO INCLUÍDO COM SUCESSO'
+					etrSigla.delete(0, tk.END)
+					etrDescricao.delete(0, tk.END)
+					lblcor_v['bg'] = 'white'
+					etrOrdenacao.delete(0, tk.END)
+					etrSigla.focus()
+					t.after(4000, apaga_mensagem)						
+				if v_cores_cdp_modo == 'EDICAO':
+					sigla = etrSigla.get()
+					descricao = etrDescricao.get()
+					cor = lblcor_v['bg']
+					ordenacao = etrOrdenacao.get()
+					Update = "update CORES_CDP set SIGLA='%s', DESCRICAO='%s', COR='%s', ORDENACAO='%s' where sigla='%s'" %(sigla, descricao, cor, ordenacao, sigla)
+					cursor.execute(Update)
+					con.commit()
+					etrSigla.delete(0, tk.END)
+					etrDescricao.delete(0, tk.END)
+					lblcor_v['bg'] = 'white'
+					etrOrdenacao.delete(0, tk.END)
+					etrSigla.focus()
+					v_cores_cdp_modo = 'INCLUSAO'
+				combine_funcs(on_close_novo(), t.destroy())				
+		def apaga_mensagem():
+			lblMensagem['text'] = ''
+		def on_close_novo():
+			global v_cores_cdp_modo
+			
+			v_cores_cdp_modo = 'INCLUSAO'			
+			popular_grid()
+			u.grab_set()																						
+		def limpa():
+			global v_cores_cdp_modo
+			
+			etrSigla['state'] = 'normal'
+			v_cores_cdp_modo = 'INCLUSAO'
+			etrSigla.delete(0, tk.END)
+			etrDescricao.delete(0, tk.END)
+			lblcor_v['bg'] = '#FFFFFF'
+			etrOrdenacao.delete(0, tk.END)
+			etrSigla.focus()
+		def iniciaEdicao():
+			etrSigla['state'] = 'normal'
+			etrSigla.delete(0, tk.END)
+			etrSigla.insert(0, selecionado[0])
+			etrSigla['state'] = 'disabled'
+			etrDescricao.delete(0, tk.END)
+			etrDescricao.insert(0, selecionado[1])
+			lblcor_v['bg'] = selecionado[2]
+			etrOrdenacao.delete(0, tk.END)
+			etrOrdenacao.insert(0, selecionado[3])
+		def to_uppercaseSigla(*args):
+			varEtrSigla.set(varEtrSigla.get().upper())
+		def to_uppercaseDescricao(*args):
+			varEtrDescricao.set(varEtrDescricao.get().upper())
+		def to_uppercaseOrdenacao(*args):
+			varEtrOrdenacao.set(varEtrOrdenacao.get().upper())
+		def on_enter_botaoIncluir(e):
+			statusbarrodape['text'] = 'SALVAR'
+		def on_leave_botaoIncluir(e):
+			statusbarrodape['text'] = ''
+		def on_enter_botaoLimpar(e):
+			statusbarrodape['text'] = '        LIMPAR'
+		def on_leave_botaoLimpar(e):
+			statusbarrodape['text'] = ''
+		def on_enter_botaoSair(e):
+			statusbarrodape['text'] = '                FECHAR'
+		def on_leave_botaoSair(e):
+			statusbarrodape['text'] = ''
+		t = tk.Toplevel()
+		t.grab_set()
+		t.geometry(resolucao_tela_cadastro)
+		t.title('Cores - CDP')
+		content = tk.Frame(t)
+		messageBar = tk.Frame(t, height=30)
+		footer = tk.Frame(t, height=30)
+		status = tk.Frame(t, height=30)
+		content.pack(fill='both')
+		messageBar.pack(fill='both')
+		footer.pack(fill='both', side='bottom')
+		status.pack(fill='both', side = 'bottom')
+		lblsigla = Label(content, text = "Sigla:", font=("Verdana", 8, 'bold'))
+		lblsigla.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.N)
+		lbldescricao = tk.Label(content, text = "Descrição:", font=("Verdana", 8, 'bold'))
+		lbldescricao.grid(column=0, row=1, ipadx=5, pady=5, sticky=tk.W+tk.S)
+		lblcor = tk.Label(content, text = "Cor:", font=("Verdana", 8, 'bold'))
+		lblcor.grid(column=0, row=2, ipadx=5, pady=5, sticky=tk.W+tk.S)
+		lblOrdenacao = tk.Label(content, text = "Ordenação:", font=("Verdana", 8, 'bold'))
+		lblOrdenacao.grid(column=0, row=3, ipadx=5, pady=5, sticky=tk.W+tk.S)
+		
+		varEtrSigla = tk.StringVar()		
+		etrSigla = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrSigla)
+		etrSigla.grid(column=1, row=0, padx=10, pady=5, sticky=tk.N)			
+		try:
+			varEtrSigla.trace_add('write', to_uppercaseSigla)
+		except AttributeError:
+			varEtrSigla.trace('w', to_uppercaseSigla)
+		
+		varEtrDescricao = tk.StringVar()
+		etrDescricao = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrDescricao)
+		etrDescricao.grid(column=1, row=1, padx=10, pady=5, sticky=tk.S)
+		try:
+			varEtrDescricao.trace_add('write', to_uppercaseDescricao)
+		except AttributeError:
+			varEtrDescricao.trace('w', to_uppercaseDescricao)			
+		
+		lblcor_v = tk.Label(content, bg="white", width=28)
+		lblcor_v.grid(column=1, row=2)
+		
+		varEtrOrdenacao = tk.StringVar()
+		etrOrdenacao = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrOrdenacao)
+		etrOrdenacao.grid(column=1, row=3, padx=10, pady=5, sticky=tk.S)
+		try:
+			varEtrOrdenacao.trace_add('write', to_uppercaseOrdenacao)
+		except AttributeError:
+			varEtrOrdenacao.trace('w', to_uppercaseOrdenacao)
+		
+		btncor = Button(content, image=v_cores_cdp_icon_img_1, relief=FLAT, command=escolhe_cor)
+		btncor.grid(column=2, row=2, padx=5, pady=5, sticky=tk.S)
+		lblMensagem = tk.Label(messageBar, fg="red", text = "", font=("Verdana", 8, 'bold'))
+		lblMensagem.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.S)
+		
+		botaoIncluir = Button(footer, image=v_cores_cdp_icon_img_2, relief=FLAT, command=insere)
+		botaoIncluir.grid(column=0, row=8)
+		botaoIncluir.bind("<Enter>", on_enter_botaoIncluir)
+		botaoIncluir.bind("<Leave>", on_leave_botaoIncluir)
+		
+		botaoLimpar = Button(footer, image=v_cores_cdp_icon_img_4, relief=FLAT, command=limpa)
+		botaoLimpar.grid(column=1, row=8)
+		botaoLimpar.bind("<Enter>", on_enter_botaoLimpar)
+		botaoLimpar.bind("<Leave>", on_leave_botaoLimpar)
+		
+		botaoSair = Button(footer, image=v_cores_cdp_icon_img_5, relief=FLAT, command = combine_funcs(on_close_novo, t.destroy))
+		botaoSair.grid(column=2, row=8)
+		botaoSair.bind("<Enter>", on_enter_botaoSair)
+		botaoSair.bind("<Leave>", on_leave_botaoSair)						
+				
+		statusbarrodape = tk.Label(status, text="", font=("Verdana", 10), anchor=tk.W)
+		statusbarrodape.pack(side=tk.BOTTOM, fill=tk.X)
+		t.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_novo, t.destroy))
+		t.iconbitmap(default='transparent.ico')
+		windowWidth, windowHeight = resolucao_width_cadastro, resolucao_height_cadastro
+		positionRight = int(formulario.winfo_screenwidth()/2 - windowWidth/2)
+		positionDown = int(formulario.winfo_screenheight()/2 - windowHeight/2)
+		t.geometry("+{}+{}".format(positionRight, positionDown))			
+		if v_cores_cdp_modo == 'EDICAO':
+			iniciaEdicao()
+		if etrSigla['state'] == 'normal':
+			etrSigla.focus()
+			
+		t.attributes("-toolwindow", True)
+		t.attributes("-topmost", True)
+		t.attributes("-topmost", False)
+	def criacao():
+		global selecionado
+		global v_cores_cdp_modo
+		
+		selecionado = ()
+		v_cores_cdp_modo = 'INCLUSAO'
+		novo()
+	def edicao(sigla, descricao, cor, ordenacao):
+		global selecionado
+		global v_cores_cdp_modo
+		
+		selecionado = (sigla, descricao, cor, ordenacao)
+		
+		if selecionado <> '':
+			v_cores_cdp_modo = 'EDICAO'
+			novo()			
+	def popular_grid():
+		global selecionado
+		
+		COORDS_LIST = []
+		buttons_dict = {}
+		
+		columns = 6									
+		query = "select SIGLA, DESCRICAO, COR, ORDENACAO, (SELECT COUNT(SIGLA) FROM CORES_CDP) AS LINHAS from CORES_CDP ORDER BY ORDENACAO"
+		cursor.execute(query)
+		resultado = cursor.fetchall()
+		sigla = ""
+		descricao = ""
+		cor = ""
+		ordenacao = ""
+		
+		k = 0
+								
+		for i in resultado:
+			k = k + 1
+			for j in range(0, columns):
+				coord = str(k)+"_"+str(j)
+				COORDS_LIST.append(coord)
+				
+				try:
+					widget = frame_buttons.grid_slaves(row=k, column=j)[0]
+					widget.destroy()
+				except:
+					pass
+					
+				try:
+					widget = buttons_dict[COORDS_LIST[-1]].grid_slaves(row=k, column=j)[0]
+					widget.destroy()
+				except:
+					pass
+					
+				sigla = i[0]
+				descricao = i[1]
+				cor  = i[2]
+				ordenacao = i[3]
+				linhas = i[4]
+								
+				if j == 4:						
+					buttons_dict[COORDS_LIST[-1]] = tk.Button(frame_buttons, text='EDITAR', font=("Verdana", 8))
+					buttons_dict[COORDS_LIST[-1]]["command"] = lambda vSigla = sigla, vDescricao = descricao, vCor = cor, vOrdenacao = ordenacao: edicao(vSigla, vDescricao, vCor, vOrdenacao)
+					buttons_dict[COORDS_LIST[-1]].grid(row = k, column = j, sticky = 'news', padx = 1, pady = 1)
+				elif j == 5:						
+					buttons_dict[COORDS_LIST[-1]] = tk.Button(frame_buttons, text='EXCLUIR', font=("Verdana", 8))
+					buttons_dict[COORDS_LIST[-1]]["command"] = lambda vSigla = sigla, vLinhas = linhas + 1, vColunas = columns: exclui(vSigla, vLinhas, vColunas)
+					buttons_dict[COORDS_LIST[-1]].grid(row = k, column = j, sticky = 'news', padx = 1, pady = 1)						
+				else:
+					b = tk.Label(frame_buttons, anchor=W, text='', borderwidth=2, relief="groove")
+					
+					if j == 0:
+						b['text'] = i[0]
+						b['width'] = 10
+					if j == 1:
+						b['text'] = i[1]
+						b['width'] = 30
+					if j == 2:
+						b['bg'] = i[2]
+						b['width'] = 15
+					if j == 3:
+						b['text'] = i[3]
+						b['width'] = 11
+					if j == 4:
+						b['width'] = 10						
+					b.grid(row=k, column=j, sticky='news')		
+									
+		# Update buttons frames idle tasks to let tkinter calculate buttons sizes
+		frame_buttons.update_idletasks()
+	def exclui(sigla, linhas, colunas):
+		MsgBox = tk.messagebox.askquestion ('Excluir Cor','Deseja excluir esse registro?',icon = 'warning', parent = u)
+		if MsgBox == 'yes':			
+			for i in range(1, linhas):
+				for j in range(0, colunas):
+					try:						
+						widget = frame_buttons.grid_slaves(row = i, column = j)[0]
+						widget.destroy()							
+					except:
+						pass						
+					
+					try:							
+						widget = buttons_dict[COORDS_LIST[-1]].grid_slaves(row = i, column = j)[0]
+						widget.destroy()
+					except:
+						pass						
+			
+			Delete = "delete from CORES_CDP where SIGLA='%s'" %(sigla)
+			cursor.execute(Delete)
+			con.commit()				
+					
+			popular_grid()														
+	u = tk.Toplevel()
+	u.grab_set()
+	u.geometry(resolucao_tela_consulta)
+	u.title('Consulta Cores - Cores CDP')
+	
+	frame_top = tk.Frame(u)
+	frame_top.grid(sticky='news', padx=1)
+	
+	frame_main = tk.Frame(u)
+	frame_main.grid(sticky='news')
+	
+	label1 = tk.Label(frame_top, text="SIGLA", fg="black", font=("Verdana", 8, 'bold'), width=9, relief="groove", anchor=W)
+	label1.grid(row=0, column=0)
+	
+	label2 = tk.Label(frame_top, text="DESCRIÇÃO", fg="black", font=("Verdana", 8, 'bold'), width = 26, relief="groove", anchor=W)
+	label2.grid(row=0, column=1)
+	
+	label3 = tk.Label(frame_top, text="COR", fg="black", font=("Verdana", 8, 'bold'), width=13, relief="groove", anchor=W)
+	label3.grid(row=0, column=2)
+	
+	label4 = tk.Label(frame_top, text="ORDENAÇÃO", fg="black", font=("Verdana", 8, 'bold'), relief="groove", anchor=W)
+	label4.grid(row=0, column=3)
+
+	# Create a frame for the canvas with non-zero row&column weights
+	frame_canvas = tk.Frame(frame_main)
+	frame_canvas.grid(row=1, column=0, pady=(5, 0), sticky='nw')
+	frame_canvas.grid_rowconfigure(0, weight=1)
+	frame_canvas.grid_columnconfigure(0, weight=1)
+	# Set grid_propagate to False to allow 5-by-5 buttons resizing later
+	frame_canvas.grid_propagate(False)
+	
+	# Add a canvas in that frame
+	canvas = tk.Canvas(frame_canvas, bg = "#FFFFFF")
+	canvas.grid(row=0, column=0, sticky="news")
+	
+	# Link a scrollbar to the canvas
+	vsb = tk.Scrollbar(frame_canvas, orient="vertical", command=canvas.yview)
+	vsb.grid(row=0, column=1, sticky='ns')
+	canvas.configure(yscrollcommand=vsb.set)
+	
+	# Create a frame to contain the buttons
+	frame_buttons = tk.Frame(canvas, bg="#FFFFFF")
+	canvas.create_window((0, 0), window=frame_buttons, anchor='nw')
+			
+	popular_grid()
+			
+	# Resize the canvas frame to show exactly 5-by-5 buttons and the scrollbar
+			
+	frame_canvas.config(width=680, height=260)
+	
+	# Set the canvas scrolling region
+	canvas.config(scrollregion=canvas.bbox("all"))
+	
+	frame_bottom = tk.Frame(u)
+	frame_bottom.grid(sticky='news', padx=1)
+	
+	botaoNovo = tk.Button(frame_bottom, text='NOVO', font=("Verdana", 8), command=lambda : criacao())
+	botaoNovo.grid(row=2, column=0)
+
+	botaoFechar = tk.Button(frame_bottom, text='FECHAR', font=("Verdana", 8), command=lambda : on_close_cores_cdp())
+	botaoFechar.grid(row=2, column=1)
+
+	windowWidth, windowHeight = resolucao_width_consulta, resolucao_height_consulta
+	positionRight = int(formulario.winfo_screenwidth()/2 - windowWidth/2)
+	positionDown = int(formulario.winfo_screenheight()/2 - windowHeight/2)
+	u.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_cores_cdp, u.destroy))
+	u.geometry("+{}+{}".format(positionRight, positionDown))			
+	u.attributes("-toolwindow", True)
+	u.attributes("-topmost", True)
+	u.attributes("-topmost", False)
+
+def racas():
+	selecionado = {
+	"sigla": "",
+	"descrição": ""
+		}
+	def on_close_avaliacao_visual_bezerro():
+		formulario.grab_set()
+		u.destroy()																		
+	def novo():
+		global selecionado
+		global v_cores_cdp_modo
+		def consiste():
+			global v_cores_cdp_modo
+											
+			v_sigla = etrSigla.get()
+			v_descricao = etrDescricao.get()
+			
+			if v_cores_cdp_modo == 'INCLUSAO':
+				if v_sigla == '':
+					lblMensagem['text'] = '*PREENCHA A SIGLA'
+					etrSigla.focus()
+					t.after(5000, apaga_mensagem)
+					return 0						
+				if len(v_sigla) > 3:
+					lblMensagem['text'] = '*A SIGLA DEVE TER NO MÁXIMO 3 CARACTERES'
+					etrSigla.focus()
+					t.after(5000, apaga_mensagem)
+					return 0
+				
+				dbRollNo = ""
+				Select="select SIGLA from RACAS where SIGLA='%s'" %(v_sigla)
+				cursor.execute(Select)
+				result = cursor.fetchall()
+				for i in result:
+					dbRollNo=i[0]
+				if(v_sigla == dbRollNo):
+					lblMensagem['text'] = '*REGISTRO JÁ EXISTE'
+					etrSigla.focus()
+					t.after(5000, apaga_mensagem)
+					return 0
+					
+			if len(v_descricao) > 20:
+				lblMensagem['text'] = '*A DESCRIÇÃO DEVE TER NO MÁXIMO 25 CARACTERES'
+				etrDescricao.focus()
+				t.after(5000, apaga_mensagem)
+				return 0
+								
+			return 1
+			
+		def insere():
+			global v_cores_cdp_modo			
+			
+			r = consiste()
+			
+			if bool(r):
+				etrSigla['state'] = 'normal'
+				
+				if v_cores_cdp_modo == 'INCLUSAO':
+					Insert=''' Insert into RACAS(SIGLA, DESCRICAO) values(?,?) '''
+					Sigla = etrSigla.get()
+					Descricao = etrDescricao.get()
+					Value=(Sigla, Descricao)
+					cursor.execute(Insert, Value)
+					con.commit()						
+				if v_cores_cdp_modo == 'EDICAO':
+					sigla = etrSigla.get()
+					descricao = etrDescricao.get()
+					Update = "update RACAS set SIGLA='%s', DESCRICAO='%s' where sigla='%s'" %(sigla, descricao, sigla)
+					cursor.execute(Update)
+					con.commit()
+					etrSigla.delete(0, tk.END)
+					etrDescricao.delete(0, tk.END)
+					etrSigla.focus()
+					v_cores_cdp_modo = 'INCLUSAO'
+				combine_funcs(on_close_novo(), t.destroy())				
+		def apaga_mensagem():
+			lblMensagem['text'] = ''
+		def on_close_novo():
+			global v_cores_cdp_modo
+			
+			v_cores_cdp_modo = 'INCLUSAO'			
+			popular_grid()
+			u.grab_set()																						
+		def limpa():
+			global v_cores_cdp_modo
+			
+			etrSigla['state'] = 'normal'
+			v_cores_cdp_modo = 'INCLUSAO'
+			etrSigla.delete(0, tk.END)
+			etrDescricao.delete(0, tk.END)
+			etrSigla.focus()
+		def iniciaEdicao():
+			etrSigla['state'] = 'normal'
+			etrSigla.delete(0, tk.END)
+			etrSigla.insert(0, selecionado[0])
+			etrSigla['state'] = 'disabled'
+			etrDescricao.delete(0, tk.END)
+			etrDescricao.insert(0, selecionado[1])
+		def to_uppercaseSigla(*args):
+			varEtrSigla.set(varEtrSigla.get().upper())
+		def to_uppercaseDescricao(*args):
+			varEtrDescricao.set(varEtrDescricao.get().upper())
+		def on_enter_botaoIncluir(e):
+			statusbarrodape['text'] = 'SALVAR'
+		def on_leave_botaoIncluir(e):
+			statusbarrodape['text'] = ''
+		def on_enter_botaoLimpar(e):
+			statusbarrodape['text'] = '        LIMPAR'
+		def on_leave_botaoLimpar(e):
+			statusbarrodape['text'] = ''
+		def on_enter_botaoSair(e):
+			statusbarrodape['text'] = '                FECHAR'
+		def on_leave_botaoSair(e):
+			statusbarrodape['text'] = ''
+		t = tk.Toplevel()
+		t.grab_set()
+		t.geometry(resolucao_tela_cadastro)
+		t.title('Raças')
+		content = tk.Frame(t)
+		messageBar = tk.Frame(t, height=30)
+		footer = tk.Frame(t, height=30)
+		status = tk.Frame(t, height=30)
+		content.pack(fill='both')
+		messageBar.pack(fill='both')
+		footer.pack(fill='both', side='bottom')
+		status.pack(fill='both', side = 'bottom')
+		lblsigla = Label(content, text = "Sigla:", font=("Verdana", 8, 'bold'))
+		lblsigla.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.N)
+		lbldescricao = tk.Label(content, text = "Descrição:", font=("Verdana", 8, 'bold'))
+		lbldescricao.grid(column=0, row=1, ipadx=5, pady=5, sticky=tk.W+tk.S)
+		
+		varEtrSigla = tk.StringVar()		
+		etrSigla = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrSigla)
+		etrSigla.grid(column=1, row=0, padx=10, pady=5, sticky=tk.N)			
+		try:
+			varEtrSigla.trace_add('write', to_uppercaseSigla)
+		except AttributeError:
+			varEtrSigla.trace('w', to_uppercaseSigla)
+		
+		varEtrDescricao = tk.StringVar()
+		etrDescricao = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrDescricao)
+		etrDescricao.grid(column=1, row=1, padx=10, pady=5, sticky=tk.S)
+		try:
+			varEtrDescricao.trace_add('write', to_uppercaseDescricao)
+		except AttributeError:
+			varEtrDescricao.trace('w', to_uppercaseDescricao)			
+
+		lblMensagem = tk.Label(messageBar, fg="red", text = "", font=("Verdana", 8, 'bold'))
+		lblMensagem.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.S)
+		
+		botaoIncluir = Button(footer, image=v_cores_cdp_icon_img_2, relief=FLAT, command=insere)
+		botaoIncluir.grid(column=0, row=8)
+		botaoIncluir.bind("<Enter>", on_enter_botaoIncluir)
+		botaoIncluir.bind("<Leave>", on_leave_botaoIncluir)
+		
+		botaoLimpar = Button(footer, image=v_cores_cdp_icon_img_4, relief=FLAT, command=limpa)
+		botaoLimpar.grid(column=1, row=8)
+		botaoLimpar.bind("<Enter>", on_enter_botaoLimpar)
+		botaoLimpar.bind("<Leave>", on_leave_botaoLimpar)
+		
+		botaoSair = Button(footer, image=v_cores_cdp_icon_img_5, relief=FLAT, command = combine_funcs(on_close_novo, t.destroy))
+		botaoSair.grid(column=2, row=8)
+		botaoSair.bind("<Enter>", on_enter_botaoSair)
+		botaoSair.bind("<Leave>", on_leave_botaoSair)						
+				
+		statusbarrodape = tk.Label(status, text="", font=("Verdana", 10), anchor=tk.W)
+		statusbarrodape.pack(side=tk.BOTTOM, fill=tk.X)
+		t.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_novo, t.destroy))
+		t.iconbitmap(default='transparent.ico')
+		windowWidth, windowHeight = resolucao_width_cadastro, resolucao_height_cadastro
+		positionRight = int(t.winfo_screenwidth()/2 - windowWidth/2)
+		positionDown = int(t.winfo_screenheight()/2 - windowHeight/2)
+		t.geometry("+{}+{}".format(positionRight, positionDown))			
+		if v_cores_cdp_modo == 'EDICAO':
+			iniciaEdicao()
+		if etrSigla['state'] == 'normal':
+			etrSigla.focus()
+			
+		t.attributes("-toolwindow", True)			
+	def criacao():
+		global selecionado
+		global v_cores_cdp_modo
+		
+		selecionado = ()
+		v_cores_cdp_modo = 'INCLUSAO'
+		novo()
+	def edicao(sigla, descricao):
+		global selecionado
+		global v_cores_cdp_modo
+		
+		selecionado = (sigla, descricao)
+		
+		if selecionado <> '':
+			v_cores_cdp_modo = 'EDICAO'
+			novo()			
+	def popular_grid():
+		global selecionado
+		
+		COORDS_LIST = []
+		buttons_dict = {}
+		
+		columns = 4									
+		query = "select SIGLA, DESCRICAO, (SELECT COUNT(SIGLA) FROM RACAS) AS LINHAS from RACAS"
+		cursor.execute(query)
+		resultado = cursor.fetchall()
+		sigla = ""
+		descricao = ""
+		
+		k = 0
+								
+		for i in resultado:
+			k = k + 1
+			for j in range(0, columns):
+				coord = str(k)+"_"+str(j)
+				COORDS_LIST.append(coord)
+				
+				try:
+					widget = frame_buttons.grid_slaves(row=k, column=j)[0]
+					widget.destroy()
+				except:
+					pass
+					
+				try:
+					widget = buttons_dict[COORDS_LIST[-1]].grid_slaves(row=k, column=j)[0]
+					widget.destroy()
+				except:
+					pass
+					
+				sigla = i[0]
+				descricao = i[1]
+				linhas = i[2]
+								
+				if j == 2:						
+					buttons_dict[COORDS_LIST[-1]] = tk.Button(frame_buttons, text='EDITAR', font=("Verdana", 8))
+					buttons_dict[COORDS_LIST[-1]]["command"] = lambda vSigla = sigla, vDescricao = descricao: edicao(vSigla, vDescricao)
+					buttons_dict[COORDS_LIST[-1]].grid(row = k, column = j, sticky = 'news', padx = 1, pady = 1)
+				elif j == 3:						
+					buttons_dict[COORDS_LIST[-1]] = tk.Button(frame_buttons, text='EXCLUIR', font=("Verdana", 8))
+					buttons_dict[COORDS_LIST[-1]]["command"] = lambda vSigla = sigla, vLinhas = linhas + 1, vColunas = columns: exclui(vSigla, vLinhas, vColunas)
+					buttons_dict[COORDS_LIST[-1]].grid(row = k, column = j, sticky = 'news', padx = 1, pady = 1)						
+				else:
+					b = tk.Label(frame_buttons, anchor=W, text='', borderwidth=2, relief="groove")
+					
+					if j == 0:
+						b['text'] = i[0]
+						b['width'] = 10
+					if j == 1:
+						b['text'] = i[1]
+						b['width'] = 30						
+					b.grid(row=k, column=j, sticky='news')		
+									
+		# Update buttons frames idle tasks to let tkinter calculate buttons sizes
+		frame_buttons.update_idletasks()
+	def exclui(sigla, linhas, colunas):
+		MsgBox = tk.messagebox.askquestion ('Excluir Cor','Deseja excluir esse registro?',icon = 'warning', parent = u)
+		if MsgBox == 'yes':			
+			for i in range(1, linhas):
+				for j in range(0, colunas):
+					try:						
+						widget = frame_buttons.grid_slaves(row = i, column = j)[0]
+						widget.destroy()							
+					except:
+						pass						
+					
+					try:							
+						widget = buttons_dict[COORDS_LIST[-1]].grid_slaves(row = i, column = j)[0]
+						widget.destroy()
+					except:
+						pass						
+			
+			Delete = "delete from RACAS where SIGLA='%s'" %(sigla)
+			cursor.execute(Delete)
+			con.commit()				
+					
+			popular_grid()														
+	u = tk.Toplevel()
+	u.grab_set()
+	u.geometry(resolucao_tela_consulta)
+	u.title('Raças')
+	
+	frame_top = tk.Frame(u)
+	frame_top.grid(sticky='news', padx=1)
+	
+	frame_main = tk.Frame(u)
+	frame_main.grid(sticky='news')
+	
+	label1 = tk.Label(frame_top, text="SIGLA", fg="black", font=("Verdana", 8, 'bold'), width=9, relief="groove", anchor=W)
+	label1.grid(row=0, column=0)
+	
+	label2 = tk.Label(frame_top, text="DESCRIÇÃO", fg="black", font=("Verdana", 8, 'bold'), width = 26, relief="groove", anchor=W)
+	label2.grid(row=0, column=1)
+		
+	# Create a frame for the canvas with non-zero row&column weights
+	frame_canvas = tk.Frame(frame_main)
+	frame_canvas.grid(row=1, column=0, pady=(5, 0), sticky='nw')
+	frame_canvas.grid_rowconfigure(0, weight=1)
+	frame_canvas.grid_columnconfigure(0, weight=1)
+	# Set grid_propagate to False to allow 5-by-5 buttons resizing later
+	frame_canvas.grid_propagate(False)
+	
+	# Add a canvas in that frame
+	canvas = tk.Canvas(frame_canvas, bg = "#FFFFFF")
+	canvas.grid(row=0, column=0, sticky="news")
+	
+	# Link a scrollbar to the canvas
+	vsb = tk.Scrollbar(frame_canvas, orient="vertical", command=canvas.yview)
+	vsb.grid(row=0, column=1, sticky='ns')
+	canvas.configure(yscrollcommand=vsb.set)
+	
+	# Create a frame to contain the buttons
+	frame_buttons = tk.Frame(canvas, bg="#FFFFFF")
+	canvas.create_window((0, 0), window=frame_buttons, anchor='nw')
+			
+	popular_grid()
+			
+	# Resize the canvas frame to show exactly 5-by-5 buttons and the scrollbar
+			
+	frame_canvas.config(width=680, height=260)
+	
+	# Set the canvas scrolling region
+	canvas.config(scrollregion=canvas.bbox("all"))
+	
+	frame_bottom = tk.Frame(u)
+	frame_bottom.grid(sticky='news', padx=1)
+	
+	botaoNovo = tk.Button(frame_bottom, text='NOVO', font=("Verdana", 8), command=lambda : criacao())
+	botaoNovo.grid(row=2, column=0)
+
+	botaoFechar = tk.Button(frame_bottom, text='FECHAR', font=("Verdana", 8), command=lambda : on_close_avaliacao_visual_bezerro())
+	botaoFechar.grid(row=2, column=1)
+
+	windowWidth, windowHeight = resolucao_width_consulta, resolucao_height_consulta
+	positionRight = int(formulario.winfo_screenwidth()/2 - windowWidth/2)
+	positionDown = int(formulario.winfo_screenheight()/2 - windowHeight/2)
+	u.geometry("+{}+{}".format(positionRight, positionDown))
+	u.protocol("WM_DELETE_WINDOW", combine_funcs(on_close_avaliacao_visual_bezerro, u.destroy))			
+	u.attributes("-toolwindow", True)
 		
 def configura_tela_inicial():
 	global v_configura_tela_inicial
@@ -3132,7 +4234,7 @@ v_cores_cdp_icon_img_4 = ImageTk.PhotoImage(v_cores_cdp_icon_4)
 v_cores_cdp_icon_img_5 = ImageTk.PhotoImage(v_cores_cdp_icon_5)
  
 # Cria botões
-botao1 = Button(ferramenta, image=imagem1,relief=FLAT, command=cores)
+botao1 = Button(ferramenta, image=imagem1, relief=FLAT, command=cores)
 
 def on_enter_botao1(e):
 	statusbarmenu['text'] = 'CORES'
@@ -3140,7 +4242,7 @@ def on_enter_botao1(e):
 def on_leave_botao1(e):
 	statusbarmenu['text'] = ''
 
-botao2 = Button(ferramenta, image=imagem2,relief=FLAT, command=configura_tela_inicial)
+botao2 = Button(ferramenta, image=imagem2, relief=FLAT, command=configura_tela_inicial)
 
 def on_enter_botao2(e):
 	statusbarmenu['text'] = '                                                                                             CONFIGURAÇÕES'
@@ -3148,7 +4250,7 @@ def on_enter_botao2(e):
 def on_leave_botao2(e):
 	statusbarmenu['text'] = ''
 
-botao3 = Button(ferramenta, image=imagem3,relief=FLAT, command=client_exit)
+botao3 = Button(ferramenta, image=imagem3, relief=FLAT, command=client_exit)
 
 def on_enter_botao3(e):
 	statusbarmenu['text'] = '                                                                                                                   SAIR'
@@ -3164,7 +4266,7 @@ def on_enter_botao4(e):
 def on_leave_botao4(e):
 	statusbarmenu['text'] = ''
 	
-botao5 = Button(ferramenta, image=imagem5,relief=FLAT)
+botao5 = Button(ferramenta, image=imagem5, relief=FLAT, command=situacoes_matrizes)
 
 def on_enter_botao5(e):
 	statusbarmenu['text'] = '                                                         SITUAÇÕES MATRIZES E/OU REPRODUTORES'
@@ -3172,7 +4274,7 @@ def on_enter_botao5(e):
 def on_leave_botao5(e):
 	statusbarmenu['text'] = ''
 
-botao6 = Button(ferramenta, image=imagem6,relief=FLAT)
+botao6 = Button(ferramenta, image=imagem6, relief=FLAT, command=causas)
 
 def on_enter_botao6(e):
 	statusbarmenu['text'] = '                                                                            CAUSAS (1, 2, 3)'
@@ -3180,7 +4282,7 @@ def on_enter_botao6(e):
 def on_leave_botao6(e):
 	statusbarmenu['text'] = ''
 	
-botao7 = Button(ferramenta, image=imagem7,relief=FLAT)
+botao7 = Button(ferramenta, image=imagem7, relief=FLAT, command=racas)
 
 def on_enter_botao7(e):
 	statusbarmenu['text'] = '                    RAÇAS'
