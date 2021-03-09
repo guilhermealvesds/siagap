@@ -3416,8 +3416,9 @@ def situacoes_matrizes():
 	selecionado = {
 	"sigla": "",
 	"descrição": "",
-	"cor": "",
-	"ordenação": ""
+	"situacao": "",
+	"sexo": "",
+	"quantidade": ""
 		}
 	def on_close_cores_cdp():
 		formulario.grab_set()
@@ -3433,7 +3434,7 @@ def situacoes_matrizes():
 											
 			v_sigla = etrSigla.get()
 			v_descricao = etrDescricao.get()
-			v_ordenacao = etrOrdenacao.get()
+			v_ordenacao = etrSituacao.get()
 			lblMensagem['fg'] = 'red'
 			
 			if v_cores_cdp_modo == 'INCLUSAO':
@@ -3442,14 +3443,14 @@ def situacoes_matrizes():
 					etrSigla.focus()
 					t.after(5000, apaga_mensagem)
 					return 0						
-				if len(v_sigla) > 1:
-					lblMensagem['text'] = '*A SIGLA DEVE TER APENAS UM CARACTERE'
+				if len(v_sigla) > 3:
+					lblMensagem['text'] = '*A SIGLA DEVE TER MENOS DE 3 CARACTERES'
 					etrSigla.focus()
 					t.after(5000, apaga_mensagem)
 					return 0
 				
 				dbRollNo = ""
-				Select="select SIGLA from CORES_CDP where SIGLA='%s'" %(v_sigla)
+				Select="select SIGLA from SITUACOESMATRIZES where SIGLA='%s'" %(v_sigla)
 				cursor.execute(Select)
 				result = cursor.fetchall()
 				for i in result:
@@ -3460,15 +3461,15 @@ def situacoes_matrizes():
 					t.after(5000, apaga_mensagem)
 					return 0
 					
-			if len(v_descricao) > 20:
-				lblMensagem['text'] = '*A DESCRIÇÃO DEVE TER NO MÁXIMO 20 CARACTERES'
+			if len(v_descricao) > 25:
+				lblMensagem['text'] = '*A DESCRIÇÃO DEVE TER NO MÁXIMO 25 CARACTERES'
 				etrDescricao.focus()
 				t.after(5000, apaga_mensagem)
 				return 0
 			
-			if v_ordenacao == '':
-				lblMensagem['text'] = '*PREENCHA A ORDENACAO'
-				etrOrdenacao.focus()
+			if monthchoosen.get() == '':
+				lblMensagem['text'] = '*SELECIONE O SEXO'
+				monthchoosen.focus()
 				t.after(5000, apaga_mensagem)
 				return 0
 				
@@ -3483,12 +3484,14 @@ def situacoes_matrizes():
 				etrSigla['state'] = 'normal'
 				
 				if v_cores_cdp_modo == 'INCLUSAO':
-					Insert=''' Insert into CORES_CDP(SIGLA, DESCRICAO, COR, ORDENACAO) values(?,?,?,?) '''
+					Insert=''' Insert into SITUACOESMATRIZES(SIGLA, DESCRICAO, COR, SIT, SEXO) values(?,?,?,?,?) '''
 					Sigla = etrSigla.get()
 					Descricao = etrDescricao.get()
 					Cor = lblcor_v['bg']
-					Ordenacao = etrOrdenacao.get()
-					Value=(Sigla, Descricao, Cor, Ordenacao)
+					Situacao = etrSituacao.get()
+					sexo = monthchoosen.get()				
+					sexo = sexo[1]
+					Value=(Sigla, Descricao, Cor, Situacao, sexo)
 					cursor.execute(Insert, Value)
 					con.commit()
 					lblMensagem['fg'] = '#2D8C2B'
@@ -3496,15 +3499,17 @@ def situacoes_matrizes():
 					etrSigla.delete(0, tk.END)
 					etrDescricao.delete(0, tk.END)
 					lblcor_v['bg'] = 'white'
-					etrOrdenacao.delete(0, tk.END)
+					etrSituacao.delete(0, tk.END)
 					etrSigla.focus()
 					t.after(4000, apaga_mensagem)						
 				if v_cores_cdp_modo == 'EDICAO':
 					sigla = etrSigla.get()
 					descricao = etrDescricao.get()
 					cor = lblcor_v['bg']
-					ordenacao = etrOrdenacao.get()
-					Update = "update CORES_CDP set SIGLA='%s', DESCRICAO='%s', COR='%s', ORDENACAO='%s' where sigla='%s'" %(sigla, descricao, cor, ordenacao, sigla)
+					Situacao = etrSituacao.get()
+					sexo = monthchoosen.get()
+					sexo = sexo[1]
+					Update = "update SITUACOESMATRIZES set SIGLA='%s', DESCRICAO='%s', COR='%s', SIT='%s', SEXO='%s' where sigla='%s'" %(sigla, descricao, cor, situacao, sexo, sigla)
 					cursor.execute(Update)
 					con.commit()
 					etrSigla.delete(0, tk.END)
@@ -3530,7 +3535,7 @@ def situacoes_matrizes():
 			etrSigla.delete(0, tk.END)
 			etrDescricao.delete(0, tk.END)
 			lblcor_v['bg'] = '#FFFFFF'
-			etrOrdenacao.delete(0, tk.END)
+			etrSituacao.delete(0, tk.END)
 			etrSigla.focus()
 		def iniciaEdicao():
 			etrSigla['state'] = 'normal'
@@ -3540,14 +3545,14 @@ def situacoes_matrizes():
 			etrDescricao.delete(0, tk.END)
 			etrDescricao.insert(0, selecionado[1])
 			lblcor_v['bg'] = selecionado[2]
-			etrOrdenacao.delete(0, tk.END)
-			etrOrdenacao.insert(0, selecionado[3])
+			etrSituacao.delete(0, tk.END)
+			etrSituacao.insert(0, selecionado[3])
 		def to_uppercaseSigla(*args):
 			varEtrSigla.set(varEtrSigla.get().upper())
 		def to_uppercaseDescricao(*args):
 			varEtrDescricao.set(varEtrDescricao.get().upper())
-		def to_uppercaseOrdenacao(*args):
-			varEtrOrdenacao.set(varEtrOrdenacao.get().upper())
+		def to_uppercaseSituacao(*args):
+			varEtrSituacao.set(varEtrSituacao.get().upper())
 		def on_enter_botaoIncluir(e):
 			statusbarrodape['text'] = 'SALVAR'
 		def on_leave_botaoIncluir(e):
@@ -3563,7 +3568,7 @@ def situacoes_matrizes():
 		t = tk.Toplevel()
 		t.grab_set()
 		t.geometry(resolucao_tela_cadastro)
-		t.title('Cores - CDP')
+		t.title('Situações de Matrizes e/ou Reprodutores')
 		content = tk.Frame(t)
 		messageBar = tk.Frame(t, height=30)
 		footer = tk.Frame(t, height=30)
@@ -3578,9 +3583,11 @@ def situacoes_matrizes():
 		lbldescricao.grid(column=0, row=1, ipadx=5, pady=5, sticky=tk.W+tk.S)
 		lblcor = tk.Label(content, text = "Cor:", font=("Verdana", 8, 'bold'))
 		lblcor.grid(column=0, row=2, ipadx=5, pady=5, sticky=tk.W+tk.S)
-		lblOrdenacao = tk.Label(content, text = "Ordenação:", font=("Verdana", 8, 'bold'))
-		lblOrdenacao.grid(column=0, row=3, ipadx=5, pady=5, sticky=tk.W+tk.S)
-		
+		lblSituacao = tk.Label(content, text = "Sigla SIT:", font=("Verdana", 8, 'bold'))
+		lblSituacao.grid(column=0, row=3, ipadx=5, pady=5, sticky=tk.W+tk.S)
+		lblSexo = tk.Label(content, text = "Situação para qual sexo?", font=("Verdana", 7, "bold"))
+		lblSexo.grid(column=0, row=4, ipadx=5, pady=5, sticky=tk.W+tk.S)
+				
 		varEtrSigla = tk.StringVar()		
 		etrSigla = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrSigla)
 		etrSigla.grid(column=1, row=0, padx=10, pady=5, sticky=tk.N)			
@@ -3600,13 +3607,19 @@ def situacoes_matrizes():
 		lblcor_v = tk.Label(content, bg="white", width=28)
 		lblcor_v.grid(column=1, row=2)
 		
-		varEtrOrdenacao = tk.StringVar()
-		etrOrdenacao = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrOrdenacao)
-		etrOrdenacao.grid(column=1, row=3, padx=10, pady=5, sticky=tk.S)
+		varEtrSituacao = tk.StringVar()
+		etrSituacao = tk.Entry(content, font = "Verdana 12", width=20, textvariable=varEtrSituacao)
+		etrSituacao.grid(column=1, row=3, padx=10, pady=5, sticky=tk.S)
 		try:
-			varEtrOrdenacao.trace_add('write', to_uppercaseOrdenacao)
+			varEtrSituacao.trace_add('write', to_uppercaseSituacao)
 		except AttributeError:
-			varEtrOrdenacao.trace('w', to_uppercaseOrdenacao)
+			varEtrSituacao.trace('w', to_uppercaseSituacao)
+			
+		n = tk.StringVar()
+		monthchoosen = ttk.Combobox(content, state = "readonly", width = 13, textvariable = n)		
+		monthchoosen['values'] = (' Macho', ' Fêmea', ' Ambos')
+		monthchoosen.grid(column=1, row=4, padx=10, pady=5, sticky='w')
+		monthchoosen.current(1)			
 		
 		btncor = Button(content, image=v_cores_cdp_icon_img_1, relief=FLAT, command=escolhe_cor)
 		btncor.grid(column=2, row=2, padx=5, pady=5, sticky=tk.S)
@@ -3667,7 +3680,7 @@ def situacoes_matrizes():
 		buttons_dict = {}
 		
 		columns = 6									
-		query = "select SIGLA, DESCRICAO, COR, ORDENACAO, (SELECT COUNT(SIGLA) FROM CORES_CDP) AS LINHAS from CORES_CDP ORDER BY ORDENACAO"
+		query = "select SIGLA, DESCRICAO, COR, SIT, (SELECT COUNT(SIGLA) FROM SITUACOESMATRIZES) AS LINHAS from SITUACOESMATRIZES ORDER BY SIGLA"
 		cursor.execute(query)
 		resultado = cursor.fetchall()
 		sigla = ""
@@ -3747,7 +3760,7 @@ def situacoes_matrizes():
 					except:
 						pass						
 			
-			Delete = "delete from CORES_CDP where SIGLA='%s'" %(sigla)
+			Delete = "delete from SITUACOESMATRIZES where SIGLA='%s'" %(sigla)
 			cursor.execute(Delete)
 			con.commit()				
 					
@@ -3755,7 +3768,7 @@ def situacoes_matrizes():
 	u = tk.Toplevel()
 	u.grab_set()
 	u.geometry(resolucao_tela_consulta)
-	u.title('Consulta Cores - Cores CDP')
+	u.title('Situações de Matrizes e/ou Reprodutores')
 	
 	frame_top = tk.Frame(u)
 	frame_top.grid(sticky='news', padx=1)
@@ -3772,7 +3785,7 @@ def situacoes_matrizes():
 	label3 = tk.Label(frame_top, text="COR", fg="black", font=("Verdana", 8, 'bold'), width=13, relief="groove", anchor=W)
 	label3.grid(row=0, column=2)
 	
-	label4 = tk.Label(frame_top, text="ORDENAÇÃO", fg="black", font=("Verdana", 8, 'bold'), relief="groove", anchor=W)
+	label4 = tk.Label(frame_top, text="SIT", fg="black", font=("Verdana", 8, 'bold'), relief="groove", anchor=W)
 	label4.grid(row=0, column=3)
 
 	# Create a frame for the canvas with non-zero row&column weights
